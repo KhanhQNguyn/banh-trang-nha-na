@@ -1,0 +1,18 @@
+{
+  "name": "banh-trang-nha-na",
+  "version": "1.0.0",
+  "description": "E-commerce platform for Bánh Tráng Nhà Na",
+  "private": true,
+  "workspaces": [
+    "server",
+    "client/storefront",
+    "client/admin"
+  ],
+  "scripts": {
+    "dev:server": "npm run dev --workspace=server",
+    "dev:storefront": "npm run dev --workspace=client/storefront",
+    "dev:admin": "npm run dev --workspace=client/admin",
+    "dev": "npm run dev:server & npm run dev:storefront & npm run dev:admin",
+    "install:all": "npm install && npm run install --workspaces"
+  }
+}

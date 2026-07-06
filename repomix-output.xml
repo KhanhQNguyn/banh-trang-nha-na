@@ -42,15 +42,17 @@ The content is organized as follows:
 <directory_structure>
 .agents/
   skills/
-    design-taste-frontend/
+    anti-slop-skil/
       SKILL.md
+    design-skill/
+      DESIGN.md
 skills-lock.json
 </directory_structure>
 
 <files>
 This section contains the contents of the repository's files.
 
-<file path=".agents/skills/design-taste-frontend/SKILL.md">
+<file path=".agents/skills/anti-slop-skil/SKILL.md">
 ---
 name: design-taste-frontend
 description: Anti-slop frontend skill for landing pages, portfolios, and redesigns. The agent reads the brief, infers the right design direction, and ships interfaces that do not look templated. Real design systems when applicable, audit-first on redesigns, strict pre-flight check.
@@ -1257,6 +1259,10 @@ But that is **web glassmorphism / frosted-glass approximation**, not official Ap
 ---
 
 **End of appendices.** Install commands above are reality anchors. The Apple Liquid Glass skeleton is a labeled approximation, not an Apple-issued package. For canonical docs per design system, consult the system's official docs (links in Section 2 plus Appendix B).
+</file>
+
+<file path=".agents/skills/design-skill/DESIGN.md">
+
 </file>
 
 <file path="skills-lock.json">
