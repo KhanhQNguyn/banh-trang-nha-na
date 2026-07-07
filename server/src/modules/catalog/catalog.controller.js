@@ -58,7 +58,7 @@ export const createProduct = catchAsync(async (req, res, next) => {
   const product = await catalogService.createProduct(req.body);
 
   return sendSuccess(res, {
-    statusCode: 211,
+    statusCode: 201,
     message: 'Product created successfully',
     data: catalogDto.productResponse(product)
   });
@@ -87,7 +87,7 @@ export const createCategory = catchAsync(async (req, res, next) => {
   const category = await catalogService.createCategory(req.body);
 
   return sendSuccess(res, {
-    statusCode: 211,
+    statusCode: 201,
     message: 'Category created successfully',
     data: catalogDto.categoryResponse(category)
   });

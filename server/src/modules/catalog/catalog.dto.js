@@ -33,7 +33,7 @@ export const catalogDto = {
   },
 
   productListResponse: (products) => {
-    return products.map(productDto.productResponse);
+    return products.map(catalogDto.productResponse);
   },
 
   categoryResponse: (category) => {
