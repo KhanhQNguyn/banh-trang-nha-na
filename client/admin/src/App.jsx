@@ -1,5 +1,6 @@
 import { useEffect } from 'react';
 import AppRouter from '@/routes/AppRouter';
+import ToastContainer from '@/components/ui/ToastContainer';
 import { useAuthStore } from '@/stores/authStore';
 
 function App() {
@@ -9,7 +10,12 @@ function App() {
     checkAuth();
   }, [checkAuth]);
 
-  return <AppRouter />;
+  return (
+    <>
+      <AppRouter />
+      <ToastContainer />
+    </>
+  );
 }
 
 export default App;

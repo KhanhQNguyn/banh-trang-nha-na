@@ -4,6 +4,7 @@ import { ArrowRight, EnvelopeSimple, MapPin, Phone } from '@phosphor-icons/react
 import httpHelper from '@/services/httpHelper';
 import { API } from '@/config/apiConfig';
 import ProductCard from '@/components/product/ProductCard';
+import FlavorShowcase from '@/components/product/FlavorShowcase';
 
 const ProductGridSkeleton = () => (
   <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-4">
@@ -47,11 +48,14 @@ const HomePage = () => {
       <section className="max-w-7xl mx-auto px-4 pt-10 pb-16 md:pt-16 md:pb-24">
         <div className="grid gap-10 md:grid-cols-2 md:items-center md:gap-8">
           <div>
-            <h1 className="text-4xl font-bold tracking-tight text-stone-900 md:text-5xl">
-              Bánh tráng phơi sương, cuốn trọn vị quê nhà.
+            <span className="inline-flex rounded-full bg-terracotta-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-terracotta-700">
+              Đặc sản Đơn Dương, Đà Lạt
+            </span>
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-stone-900 md:text-5xl">
+              Bánh tráng mắm ruốc, đậm vị Đà Lạt.
             </h1>
             <p className="mt-4 max-w-[46ch] text-stone-600 leading-relaxed">
-              Bánh Tráng Nhà Na làm thủ công từ gạo Tây Ninh, không chất bảo quản, giao tận nơi trong ngày.
+              Nhà Na nướng giòn từng lá bánh tráng, trộn mắm ruốc theo công thức riêng từ vùng nguyên liệu Đơn Dương. Chọn vị vừa, mặn, hoặc cay theo khẩu vị của bạn.
             </p>
             <div className="mt-8 flex items-center gap-4">
               <Link
@@ -64,13 +68,7 @@ const HomePage = () => {
             </div>
           </div>
 
-          <div className="relative aspect-[4/3] overflow-hidden rounded-3xl bg-stone-100">
-            <img
-              src="https://picsum.photos/seed/banh-trang-nha-na-hero/900/675"
-              alt="Bánh tráng Nhà Na phơi sương"
-              className="h-full w-full object-cover"
-            />
-          </div>
+          <FlavorShowcase />
         </div>
       </section>
 
@@ -109,7 +107,7 @@ const HomePage = () => {
         )}
       </section>
 
-      <section id="lien-he" className="bg-stone-50 border-t border-stone-100">
+      <section id="lien-he" className="bg-white border-t border-stone-100">
         <div className="max-w-7xl mx-auto px-4 py-16">
           <h2 className="text-xl font-semibold text-stone-900 md:text-2xl">Liên hệ</h2>
           <p className="mt-2 max-w-[52ch] text-stone-600">
@@ -120,7 +118,7 @@ const HomePage = () => {
             <div className="flex items-start gap-3">
               <MapPin size={20} className="mt-0.5 flex-shrink-0 text-brand-600" />
               <span className="text-sm text-stone-700">
-                123 Đường Trần Hưng Đạo, Phường 1, Tây Ninh
+                Thị trấn Thạnh Mỹ, huyện Đơn Dương, Lâm Đồng
               </span>
             </div>
             <div className="flex items-start gap-3">

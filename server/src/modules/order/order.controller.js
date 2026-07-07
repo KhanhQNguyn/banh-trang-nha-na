@@ -37,7 +37,13 @@ export const lookupOrder = catchAsync(async (req, res) => {
 export const listAllOrders = catchAsync(async (req, res) => {
   const pagination = getPaginationOptions(req.query);
   const filters = {};
-  if (req.query.status) filters.status = req.query.status;
+  if (req.query.status) {
+    // Supports a single status ("confirmed") or a comma-separated group
+    // ("confirmed,shipping,completed") so the admin UI can filter by a
+    // logical bucket without the client re-implementing pagination.
+    const statuses = req.query.status.split(',').map((s) => s.trim()).filter(Boolean);
+    filters.status = statuses.length > 1 ? { $in: statuses } : statuses[0];
+  }
 
   const { orders, total } = await orderService.queryOrders(filters, pagination);
   const meta = buildPaginationMeta(total, pagination.page, pagination.limit);

@@ -1,11 +1,12 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import AdminLayout from '@/components/layout/AdminLayout';
 import ProtectedRoute from './ProtectedRoute';
 
 // Page imports
-import DashboardPage from '@/pages/DashboardPage';
 import OrderListPage from '@/pages/OrderListPage';
 import OrderDetailPage from '@/pages/OrderDetailPage';
+import OrderHistoryPage from '@/pages/OrderHistoryPage';
+import CustomerListPage from '@/pages/CustomerListPage';
 import ProductListPage from '@/pages/ProductListPage';
 import ProductFormPage from '@/pages/ProductFormPage';
 import CategoryListPage from '@/pages/CategoryListPage';
@@ -28,9 +29,11 @@ const AppRouter = () => {
             </ProtectedRoute>
           }
         >
-          <Route path="/" element={<DashboardPage />} />
+          <Route path="/" element={<Navigate to="/orders" replace />} />
           <Route path="/orders" element={<OrderListPage />} />
           <Route path="/orders/:id" element={<OrderDetailPage />} />
+          <Route path="/order-history" element={<OrderHistoryPage />} />
+          <Route path="/customers" element={<CustomerListPage />} />
           <Route path="/products" element={<ProductListPage />} />
           <Route path="/products/new" element={<ProductFormPage />} />
           <Route path="/products/:id/edit" element={<ProductFormPage />} />

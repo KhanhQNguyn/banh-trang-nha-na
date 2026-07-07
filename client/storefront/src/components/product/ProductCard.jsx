@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { Plus } from '@phosphor-icons/react';
 import { useCartStore } from '@/stores/cartStore';
 import { formatCurrency } from '@/utils/formatCurrency';
+import FlavorBadge from './FlavorBadge';
 
 const ProductCard = ({ product }) => {
   const addItem = useCartStore((s) => s.addItem);
@@ -35,13 +36,15 @@ const ProductCard = ({ product }) => {
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
         />
         {onSale && (
-          <span className="absolute left-3 top-3 rounded-full bg-brand-500 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="absolute left-3 top-3 rounded-full bg-chili-600 px-2.5 py-1 text-xs font-semibold text-white">
             Khuyến mãi
           </span>
         )}
       </Link>
 
       <div className="flex flex-1 flex-col gap-2 p-4">
+        {variant.attributes?.flavor && <FlavorBadge flavor={variant.attributes.flavor} />}
+
         <Link to={`/products/${product.slug}`}>
           <h3 className="text-sm font-medium text-stone-900 line-clamp-2 leading-snug hover:text-brand-600 transition-colors">
             {product.name}
