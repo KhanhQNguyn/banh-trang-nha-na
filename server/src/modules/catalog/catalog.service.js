@@ -119,7 +119,7 @@ export const catalogService = {
     );
 
     if (!updated) {
-      console.warn(`⚠️ Failed to restock variant ${variantId} on product ${productId}: Not found`);
+      console.warn(`Failed to restock variant ${variantId} on product ${productId}: Not found`);
     }
     return updated;
   },

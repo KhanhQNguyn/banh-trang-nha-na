@@ -1,5 +1,5 @@
 import app from './src/app.js';
-import { connectDB } from './src/config/db.js';
+import { connectDB } from './src/config/db.config.js';
 import { env } from './src/config/env.js';
 
 const startServer = async () => {
@@ -9,8 +9,8 @@ const startServer = async () => {
   // 2. Start Listening
   const port = env.port;
   app.listen(port, () => {
-    console.log(`🚀 Server running in ${env.nodeEnv} mode on port ${port}`);
-    console.log(`🔗 Healthcheck available at: http://localhost:${port}/status`);
+    console.log(`Server running in ${env.nodeEnv} mode on port ${port}`);
+    console.log(`Healthcheck available at: http://localhost:${port}/status`);
   });
 };
 

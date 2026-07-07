@@ -7,7 +7,7 @@ export const errorHandler = (err, req, res, next) => {
 
   // Log error stack for debugging in development
   if (process.env.NODE_ENV !== 'production') {
-    console.error('💥 Error stack:', err);
+    console.error('Error stack:', err);
   }
 
   // Normalize specific error types
