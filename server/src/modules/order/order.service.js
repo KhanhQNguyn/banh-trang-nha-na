@@ -11,6 +11,52 @@ export const orderService = {
     return await orderRepository.findById(id);
   },
 
+  queryOrders: async (filters = {}, pagination = {}) => {
+    const { page = 1, limit = 10, skip = 0 } = pagination;
+    const orders = await orderRepository.find(filters, skip, limit);
+    const total = await orderRepository.count(filters);
+    return { orders, total };
+  },
+
+  getOrderCountToday: async () => {
+    const startOfToday = new Date();
+    startOfToday.setHours(0, 0, 0, 0);
+    return await orderRepository.count({ createdAt: { $gte: startOfToday } });
+  },
+
+  getRecentOrders: async (limit = 5) => {
+    return await orderRepository.find({}, 0, limit);
+  },
+
+  transitionStatus: async (orderId, targetStatus, changedByAdminId, cancelReason = null) => {
+    const order = await orderRepository.findById(orderId);
+    if (!order) throw new AppError(404, 'Order not found');
+
+    const { orderValidators } = await import('./order.validators.js');
+    orderValidators.validateOrderTransition(order.status, targetStatus, 'admin');
+
+    order.status = targetStatus;
+    order.statusHistory.push({ status: targetStatus, changedBy: changedByAdminId });
+
+    if (targetStatus === 'cancelled') {
+      order.cancelReason = cancelReason || 'Cancelled by admin';
+    }
+
+    const updated = await orderRepository.save(order);
+
+    if (targetStatus === 'cancelled') {
+      eventBus.emit(EVENTS.ORDER_CANCELLED, updated);
+    } else if (targetStatus === 'confirmed') {
+      eventBus.emit(EVENTS.ORDER_CONFIRMED, updated);
+    } else if (targetStatus === 'shipping') {
+      eventBus.emit(EVENTS.ORDER_SHIPPING, updated);
+    } else if (targetStatus === 'completed') {
+      eventBus.emit(EVENTS.ORDER_COMPLETED, updated);
+    }
+
+    return updated;
+  },
+
   placeOrder: async (orderData) => {
     const { items: requestItems, voucherCode, paymentMethod, customerInfo, note } = orderData;
 

@@ -8,11 +8,9 @@ E-commerce platform for "Bánh Tráng Nhà Na" (Vietnamese rice paper snack bran
 
 - `server/` — Express.js REST API (Node.js ESM, MongoDB/Mongoose)
 - `client/storefront/` — Customer-facing React storefront (Vite, Tailwind, Zustand)
-- `client/admin/` — Admin panel, same stack (Phase 2 — not yet built)
+- `client/admin/` — Admin panel, same stack (scaffolded, not yet built out)
 
-**Current phase:** Phase 1 — Customer Storefront MVP. No user authentication. All orders are guest checkouts.
-
-See `doc/SPRINTS.md` for the full sprint plan and `server/MODELS.md` for all Mongoose schema details.
+Guest checkout (no customer accounts) is the storefront model. Admin-only JWT authentication is currently being added for the admin panel — see "Auth" below; `doc/CLAUDE.md` and `doc/ENDPOINTS.md` predate this work and still describe catalog/order/voucher admin routes as fully public. Treat those two docs as reference for the public-facing endpoints and model shapes (still accurate), not for auth state.
 
 ## Commands
 
@@ -27,18 +25,29 @@ npm run dev --workspace=client/admin             # Vite on port 5174
 
 npm run build --workspace=client/storefront
 npm run lint --workspace=client/storefront
+
+# Seed the initial admin account (uses ADMIN_EMAIL / ADMIN_PASSWORD from server/.env)
+npm run seed:admin --workspace=server
 ```
+
+There is no test suite configured in any workspace yet.
 
 ## Environment Setup
 
 `server/.env` — required vars:
 ```
 MONGODB_URI=
+JWT_ACCESS_SECRET=
+JWT_REFRESH_SECRET=
+JWT_ACCESS_EXPIRY=15m
+JWT_REFRESH_EXPIRY=7d
 CLOUDINARY_CLOUD_NAME=    # set to "mock" to skip real uploads
 CLOUDINARY_API_KEY=
 CLOUDINARY_API_SECRET=
 CORS_ORIGINS=http://localhost:5173,http://localhost:5174
 PORT=5000
+ADMIN_EMAIL=
+ADMIN_PASSWORD=
 ```
 
 `client/storefront/.env` and `client/admin/.env`:
@@ -46,22 +55,9 @@ PORT=5000
 VITE_API_BASE_URL=http://localhost:5000/api/v1
 ```
 
-Cloudinary fields warn but don't crash on startup — `media.service.js` falls back to a mock URL when `cloud_name === 'mock'`. MongoDB URI will crash the server if missing.
+`server/src/config/env.js` warns (does not crash) on missing `JWT_*` and Cloudinary vars, falling back to insecure defaults — fine for local dev, must be set for anything beyond it. `media.service.js` falls back to a mock URL when `cloud_name === 'mock'`. `MONGODB_URI` will crash the server if missing/unreachable.
 
 ## Server Architecture
-
-### Active API routes (`/api/v1`)
-
-| Method | Path | Description |
-|---|---|---|
-| GET | `/products` | List products; query params: `search`, `categorySlug`, `minPrice`, `maxPrice`, `isFeatured`, `isNewArrival` |
-| GET | `/products/:slug` | Single product with variants |
-| GET | `/categories` | All active categories |
-| POST | `/orders` | Place a guest order |
-| POST | `/orders/lookup` | Look up order by `{ orderNumber, phone }` |
-| POST | `/vouchers/validate` | Validate a voucher code against a subtotal |
-
-No auth middleware exists in Phase 1. All routes are public.
 
 ### Module structure
 
@@ -79,7 +75,16 @@ Each domain in `server/src/modules/<domain>/` follows this layer pattern:
 *.interfaces.js   — cross-module interface functions (called by other modules)
 ```
 
-**Active modules:** `catalog` (products + categories), `order`, `voucher`
+**Modules:** `auth` (admin login/refresh/logout), `catalog` (products + categories), `order`, `voucher`
+
+### Auth
+
+- JWT access + refresh tokens, issued in `auth.service.js`. Access token embeds `{ id, email, role }`; refresh token embeds only `{ id }`.
+- `verifyToken` (`server/src/middlewares/verifyToken.js`) reads `Authorization: Bearer <token>`, verifies against `env.jwtAccessSecret`, sets `req.user`.
+- `requireRole(...roles)` (`server/src/middlewares/requireRole.js`) gates by `req.user.role`; only `'admin'` role exists currently.
+- Route convention: public storefront reads/writes stay unguarded; every admin mutation/list route chains `verifyToken, requireRole('admin')` in front of the controller (see `catalog.routes.js`, `order.routes.js`, `voucher.routes.js`). Follow this exact chain order for any new admin route.
+- `User.model.js` hashes passwords via `comparePassword` (bcryptjs); seed the first admin with `npm run seed:admin --workspace=server`.
+- No customer-facing auth — `Order.userId` is always `null`, orders are always guest checkouts regardless of admin auth state.
 
 ### Event system
 
@@ -103,13 +108,15 @@ When an order is cancelled, `catalog.events.js` restocks inventory and `voucher.
 
 **Text search** — `Product` has a compound text index on `searchName` + `description`. `searchName` is a diacritic-stripped lowercase copy of `name`, generated in the `pre('validate')` hook.
 
+See `doc/ENDPOINTS.md` for the full public API surface and `doc/MODELS.md` for all Mongoose schema field tables.
+
 ## Storefront Architecture
 
 ### State (Zustand stores in `src/stores/`)
 
 - `cartStore.js` — guest-only cart; persisted to localStorage via `zustand/middleware persist` under key `btnn-cart`. Has `addItem`, `removeItem`, `updateQuantity`, `clearCart`.
 - `uiStore.js` — toast queue and global loading flags.
-- `authStore.js` — scaffolded but unused in Phase 1; do not wire it up until Phase 2.
+- `authStore.js` — scaffolded but unused by the storefront; auth is admin-panel-only.
 
 ### HTTP
 
@@ -117,7 +124,7 @@ When an order is cancelled, `catalog.events.js` restocks inventory and `voucher.
 
 ### Routing
 
-React Router v6. `ProtectedRoute` exists but is unused in Phase 1 — no pages require auth. Pages currently scaffolded as stubs in `src/pages/<PageName>/index.jsx`.
+React Router v6. `ProtectedRoute` exists but is unused in the storefront — no storefront pages require auth. Pages currently scaffolded as stubs in `src/pages/<PageName>/index.jsx`.
 
 ### Styling
 
@@ -127,5 +134,5 @@ Tailwind CSS. `src/utils/cn.js` exports `cn()` (clsx + tailwind-merge). Follow t
 
 - Every `Product` always has at least one variant (auto-created as default in `pre('validate')`). Never assume `variants` can be empty.
 - `Order.customerSnapshot` captures name/phone/email/address at order time — immutable. Do not read from a user profile.
-- `Order.userId` is always `null` in Phase 1.
-- Voucher discount is capped by `maxDiscount` for `percentage` type. Per-user limits are tracked in `usedByUsers[]` but `userId` is `null` in Phase 1 so per-user enforcement is effectively bypassed.
+- `Order.userId` is always `null` — orders are always guest checkouts.
+- Voucher discount is capped by `maxDiscount` for `percentage` type. Per-user limits are tracked in `usedByUsers[]` but `userId` is always `null` on orders, so per-user enforcement is effectively bypassed.

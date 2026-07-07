@@ -108,5 +108,9 @@ productSchema.pre('validate', function(next) {
 // Compound index for search
 productSchema.index({ searchName: 'text', description: 'text' });
 
+// Supports the storefront listing/featured queries which always filter on
+// isActive and often on isFeatured (e.g. GET /products?isFeatured=true).
+productSchema.index({ isActive: 1, isFeatured: 1 });
+
 export const Product = mongoose.models.Product || mongoose.model('Product', productSchema);
 export const Variant = mongoose.model('Variant', variantSchema); // Optional export, schema is embedded

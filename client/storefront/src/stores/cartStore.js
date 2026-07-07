@@ -1,95 +1,89 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
-import httpHelper from '@/services/httpHelper';
-import { API } from '@/config/apiConfig';
+
+const findIndex = (items, productId, variantId) =>
+  items.findIndex((i) => i.productId === productId && i.variantId === variantId);
+
+// Clamp a requested quantity against available stock. A finite stock value caps
+// the quantity (0 stock => 0, i.e. cannot add); a missing stock value is treated
+// as unlimited.
+const clampToStock = (quantity, stockQuantity) =>
+  Number.isFinite(stockQuantity) ? Math.min(quantity, stockQuantity) : quantity;
 
 export const useCartStore = create(
   persist(
     (set, get) => ({
       items: [],
-      isLoading: false,
+      isOpen: false,
 
-      addItem: async (productId, variantId, quantity, isAuthenticated) => {
-        if (isAuthenticated) {
-          set({ isLoading: true });
-          const res = await httpHelper.post(API.CART.ADD_ITEM, { productId, variantId, quantity });
-          set({ items: res.data.data.items, isLoading: false });
+      openCart: () => set({ isOpen: true }),
+      closeCart: () => set({ isOpen: false }),
+      toggleCart: () => set((state) => ({ isOpen: !state.isOpen })),
+
+      addItem: (product, quantity = 1) => {
+        // Nothing to add for a sold-out variant.
+        if (Number.isFinite(product.stockQuantity) && product.stockQuantity <= 0) {
+          return;
+        }
+
+        const items = [...get().items];
+        const idx = findIndex(items, product.productId, product.variantId);
+
+        if (idx > -1) {
+          const nextQuantity = items[idx].quantity + quantity;
+          items[idx] = {
+            ...items[idx],
+            quantity: clampToStock(nextQuantity, product.stockQuantity),
+          };
         } else {
-          // Guest: add to local state
-          const items = [...get().items];
-          const idx = items.findIndex(
-            (i) => i.productId === productId && i.variantId === variantId
-          );
-          if (idx > -1) {
-            items[idx] = { ...items[idx], quantity: items[idx].quantity + quantity };
-          } else {
-            items.push({ productId, variantId, quantity, addedAt: new Date().toISOString() });
-          }
-          set({ items });
-        }
-      },
-
-      removeItem: async (itemId, isAuthenticated) => {
-        if (isAuthenticated) {
-          set({ isLoading: true });
-          const res = await httpHelper.delete(API.CART.REMOVE_ITEM(itemId));
-          set({ items: res.data.data.items, isLoading: false });
-        } else {
-          set({ items: get().items.filter((_, i) => i !== itemId) });
-        }
-      },
-
-      updateQuantity: async (itemId, quantity, isAuthenticated) => {
-        if (isAuthenticated) {
-          set({ isLoading: true });
-          const res = await httpHelper.patch(API.CART.UPDATE_ITEM(itemId), { quantity });
-          set({ items: res.data.data.items, isLoading: false });
-        } else {
-          const items = [...get().items];
-          if (items[itemId]) {
-            items[itemId] = { ...items[itemId], quantity };
-          }
-          set({ items });
-        }
-      },
-
-      clearCart: async (isAuthenticated) => {
-        if (isAuthenticated) {
-          await httpHelper.delete(API.CART.CLEAR);
-        }
-        set({ items: [] });
-      },
-
-      syncWithServer: async () => {
-        try {
-          set({ isLoading: true });
-          const res = await httpHelper.get(API.CART.GET);
-          set({ items: res.data.data.items, isLoading: false });
-        } catch (_) {
-          set({ isLoading: false });
-        }
-      },
-
-      mergeGuestCart: async () => {
-        const guestItems = get().items;
-        if (guestItems.length === 0) return;
-
-        // Add each guest item to the server cart
-        for (const item of guestItems) {
-          try {
-            await httpHelper.post(API.CART.ADD_ITEM, {
-              productId: item.productId,
-              variantId: item.variantId,
-              quantity: item.quantity,
-            });
-          } catch (_) {
-            // Skip items that fail (e.g., out of stock)
-          }
+          items.push({ ...product, quantity: clampToStock(quantity, product.stockQuantity) });
         }
 
-        // Sync from server to get the merged result
-        await get().syncWithServer();
+        set({ items, isOpen: true });
       },
+
+      removeItem: (productId, variantId) => {
+        set({
+          items: get().items.filter(
+            (i) => !(i.productId === productId && i.variantId === variantId)
+          ),
+        });
+      },
+
+      updateQuantity: (productId, variantId, quantity) => {
+        if (quantity <= 0) {
+          get().removeItem(productId, variantId);
+          return;
+        }
+        const items = [...get().items];
+        const idx = findIndex(items, productId, variantId);
+        if (idx === -1) return;
+
+        items[idx] = {
+          ...items[idx],
+          quantity: clampToStock(quantity, items[idx].stockQuantity),
+        };
+        set({ items });
+      },
+
+      incrementItem: (productId, variantId) => {
+        const item = get().items.find(
+          (i) => i.productId === productId && i.variantId === variantId
+        );
+        if (item) get().updateQuantity(productId, variantId, item.quantity + 1);
+      },
+
+      decrementItem: (productId, variantId) => {
+        const item = get().items.find(
+          (i) => i.productId === productId && i.variantId === variantId
+        );
+        if (item) get().updateQuantity(productId, variantId, item.quantity - 1);
+      },
+
+      clearCart: () => set({ items: [] }),
+
+      totalItems: () => get().items.reduce((sum, i) => sum + i.quantity, 0),
+      totalPrice: () => get().items.reduce((sum, i) => sum + i.unitPrice * i.quantity, 0),
     }),
     {
       name: 'btnn-cart',

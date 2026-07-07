@@ -10,20 +10,23 @@ import {
   updateCategory,
   deleteCategory
 } from './catalog.controller.js';
+import { verifyToken } from '../../middlewares/verifyToken.js';
+import { requireRole } from '../../middlewares/requireRole.js';
 
 const router = express.Router();
 
-// Products
+// Public
 router.get('/products', listProducts);
 router.get('/products/:slug', getProduct);
-router.post('/products', createProduct);
-router.patch('/products/:id', updateProduct);
-router.delete('/products/:id', deleteProduct);
-
-// Categories
 router.get('/categories', listCategories);
-router.post('/categories', createCategory);
-router.patch('/categories/:id', updateCategory);
-router.delete('/categories/:id', deleteCategory);
+
+// Admin only
+router.post('/products', verifyToken, requireRole('admin'), createProduct);
+router.patch('/products/:id', verifyToken, requireRole('admin'), updateProduct);
+router.delete('/products/:id', verifyToken, requireRole('admin'), deleteProduct);
+
+router.post('/categories', verifyToken, requireRole('admin'), createCategory);
+router.patch('/categories/:id', verifyToken, requireRole('admin'), updateCategory);
+router.delete('/categories/:id', verifyToken, requireRole('admin'), deleteCategory);
 
 export default router;
